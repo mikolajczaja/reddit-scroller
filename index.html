@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+  <label for="subredditName">Subreddit name:</label>
+  <input type="text" id="subredditName" name="subredditName" placeholder="dankmemes"><br><br>
+  <label for="sortingType">Sorting type:</label>
+  <select name="sortingType" id="sortingType">
+    <option value="new">New</option>
+    <option value="top">Top</option>
+  </select>
+  <input type="button" value="Fetch" onclick="initialize()">
+	
+<script>
+//config section
+var contentBatchSize=24;
+var sortingType="new";
+
+
+//event handling
+scrollHandler = function () {
+    if($(window).scrollTop() + $(window).height() > $(document).height()-200) {
+        fetchImages();
+	}
+};
+
+var scrollTimeout; 
+$(window).scroll(function () {
+    if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = null;
+    }
+    scrollTimeout = setTimeout(scrollHandler, 250);
+});
+
+function initialize(){
+    console.log("Loading first batch"); 
+	subredditName=document.getElementById("subredditName").value;
+	sortingType=document.getElementById("sortingType").value;
+	fetchImages();
+}
+
+
+//HTTP comm handling
+var after="";
+var currentIndex=0;
+
+
+function fetchImages(){
+
+var xhttp = new XMLHttpRequest();
+xhttp.onreadystatechange = function() {
+
+  if (this.readyState == 4 && this.status == 200) {
+  	var json = JSON.parse(this.responseText);
+	var dataArray=json.data.children;
+	after=json.data.after;
+		
+	var rowDivInnerHtmlString= '<div class="row" style="margin-bottom:90px">';
+
+	var i;
+	for(i=0;i<dataArray.length;i++){
+		rowDivInnerHtmlString += getImageDiv(dataArray, i);
+	}
+	rowDivInnerHtmlString += '</div>';
+		
+	document.body.innerHTML += rowDivInnerHtmlString;
+  }
+};
+xhttp.open("GET", "https://www.reddit.com/r/"+subredditName+"/"+sortingType+"/.json?count="+currentIndex+"&limit="+contentBatchSize+"&after="+after, true);
+xhttp.send();
+}
+
+function getImageDiv(dataArray,index){
+	console.log("creating image div for index: "+index);
+
+	return '<div class="col-xl-4 col-lg-4 col-md-4 col-sm-4 col-6">'+
+		'<img class="img-fluid" src="'+dataArray[index].data.url+'" width="500" height="500">'
+		+'</div>';
+}
+</script>
